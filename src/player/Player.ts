@@ -62,7 +62,6 @@ export class Player {
   private isKnockedDown = false;
   private knockdownTimer = 0;
   private isDead = false;
-  private static readonly POISE_THRESHOLD = 0;
 
   // UI
   public ui: EnemyUI;
@@ -125,7 +124,7 @@ export class Player {
 
     this.root.getWorldPosition(playerPos);
     this.lockedTarget.getWorldPosition(targetPos);
-    this.playerCamera.camera.getWorldPosition(cameraPos);
+    this.playerCamera.getCamera().getWorldPosition(cameraPos);
 
     const referencePos = targetPos;
     const toReference = new THREE.Vector3().subVectors(referencePos, cameraPos).normalize();
@@ -164,11 +163,10 @@ export class Player {
         colliderHelper.position.set(0, 0, -1.2);
         this.sword.add(colliderHelper);
         this.swordCollider = new Collider(colliderHelper, { type: "box", size: new THREE.Vector3(0.6, 0.6, 2.4) }, "playerSword", true, false);
-        const debugBox = new THREE.Mesh(
+        colliderHelper.add(new THREE.Mesh(
           new THREE.BoxGeometry(0.6, 0.6, 2.4),
           new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true })
-        );
-        colliderHelper.add(debugBox);
+        ));
       }
       this.model.rotation.y = Math.PI;
       this.root.add(this.model);
@@ -184,11 +182,10 @@ export class Player {
     bodyHelper.position.set(0, 1.8, 0);
     this.root.add(bodyHelper);
     this.bodyCollider = new Collider(bodyHelper, { type: "box", size: new THREE.Vector3(1.2, 2.8, 1.2) }, "player", false, true, this.root);
-    const debugBox = new THREE.Mesh(
+    bodyHelper.add(new THREE.Mesh(
       new THREE.BoxGeometry(1.2, 2.8, 1.2),
       new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true })
-    );
-    // bodyHelper.add(debugBox);
+    ));
   }
 
   registerHit(source: THREE.Object3D, attack: AttackData): void {

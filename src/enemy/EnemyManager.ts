@@ -7,7 +7,7 @@ export class EnemyManager {
   private scene: THREE.Scene;
   private player: Player;
   private enemies: Enemy[] = [];
-  private colliderCheckInterval: NodeJS.Timeout | null = null;
+  private colliderCheckInterval: ReturnType<typeof setInterval> | null = null;
   private playerSwordHandlerSetup = false;
 
   constructor(scene: THREE.Scene, player: Player) {

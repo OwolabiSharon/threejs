@@ -149,11 +149,10 @@ export class Enemy {
       false
     );
 
-    const debugBox = new THREE.Mesh(
+    colliderHelper.add(new THREE.Mesh(
       new THREE.BoxGeometry(0.6, 0.6, 2.4),
       new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true })
-    );
-    colliderHelper.add(debugBox);
+    ));
   }
 
   private createBodyCollider(): void {
@@ -170,11 +169,10 @@ export class Enemy {
       this.root
     );
 
-    const debugBox = new THREE.Mesh(
+    bodyHelper.add(new THREE.Mesh(
       new THREE.BoxGeometry(1.2, 2.8, 1.2),
       new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true })
-    );
-    // bodyHelper.add(debugBox);
+    ));
   }
 
   private setupAnimations(): void {

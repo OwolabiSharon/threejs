@@ -55,6 +55,10 @@ export class PlayerCamera {
     
   }
 
+  public getCamera(): THREE.Camera {
+    return this.camera;
+  }
+
   freeLookUpdate(mouseDelta: MouseDelta, followObject: THREE.Object3D, target: THREE.Object3D): void {
     if (this.lockModeActive) {
       this.lockModeActive = false;
