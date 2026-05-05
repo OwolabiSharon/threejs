@@ -345,7 +345,7 @@ export class Enemy {
     if (dist > Config.RUN_RANGE || this.isMoveToAttack || !this.player) return false;
 
     if (this.secondCooldown <= 0) {
-      const canAttack = this.player.currentAttackers < 1 && Math.random() < 0.01;
+      const canAttack = this.player.currentAttackers < 1 && Math.random() < 0.02;
       if (canAttack) {
         this.isMoveToAttack = true;
         this.moveToAttackTimer = Config.MOVE_TO_ATTACK_DURATION;
@@ -360,6 +360,8 @@ export class Enemy {
   private updateCircleMode(): void {
     if (this.state.id !== "circle" && this.state.id !== "taunt") {
       this.circleMode = Math.random() < 0.94 ? "strafe" : "taunt";
+    } else if (this.state.id === "taunt" && Math.random() < 0.05) {
+      this.circleMode = "strafe";
     }
   }
 
