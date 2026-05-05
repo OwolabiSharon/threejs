@@ -149,10 +149,10 @@ export class Enemy {
       false
     );
 
-    colliderHelper.add(new THREE.Mesh(
-      new THREE.BoxGeometry(0.6, 0.6, 2.4),
-      new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true })
-    ));
+    // colliderHelper.add(new THREE.Mesh(
+    //   new THREE.BoxGeometry(0.6, 0.6, 2.4),
+    //   new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true })
+    // ));
   }
 
   private createBodyCollider(): void {
@@ -169,10 +169,10 @@ export class Enemy {
       this.root
     );
 
-    bodyHelper.add(new THREE.Mesh(
-      new THREE.BoxGeometry(1.2, 2.8, 1.2),
-      new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true })
-    ));
+    // bodyHelper.add(new THREE.Mesh(
+    //   new THREE.BoxGeometry(1.2, 2.8, 1.2),
+    //   new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true })
+    // ));
   }
 
   private setupAnimations(): void {
@@ -411,8 +411,10 @@ export class Enemy {
     return id === "dead" ? { ...DEAD_STATE } : baseState;
   }
 
+  private static readonly MOVING_STATES: ReadonlySet<string> = new Set(["pullback", "moveToAttack", "run", "circle"]);
+
   private isMovingState(id: EnemyStateId): boolean {
-    return ["pullback", "moveToAttack", "run", "circle"].includes(id);
+    return Enemy.MOVING_STATES.has(id);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

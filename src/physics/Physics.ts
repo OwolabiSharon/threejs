@@ -10,6 +10,8 @@ const _raycaster = new THREE.Raycaster();
 const _closest = new THREE.Vector3();
 
 const _mtv = new THREE.Vector3();
+const _halfA = new THREE.Vector3();
+const _halfB = new THREE.Vector3();
 
 /** Returns penetration depth > 0 if overlapping, and writes the push direction into `out` (a → away from b) */
 function penetration(a: Collider, b: Collider, out: THREE.Vector3): number {
@@ -22,12 +24,12 @@ function penetration(a: Collider, b: Collider, out: THREE.Vector3): number {
   }
 
   if (a.shape.type === "box" && b.shape.type === "box") {
-    const ha = a.shape.size.clone().multiplyScalar(0.5);
-    const hb = b.shape.size.clone().multiplyScalar(0.5);
+    _halfA.copy(a.shape.size).multiplyScalar(0.5);
+    _halfB.copy(b.shape.size).multiplyScalar(0.5);
     const d  = _mtv.subVectors(a.worldPos, b.worldPos);
-    const ox = ha.x + hb.x - Math.abs(d.x);
-    const oy = ha.y + hb.y - Math.abs(d.y);
-    const oz = ha.z + hb.z - Math.abs(d.z);
+    const ox = _halfA.x + _halfB.x - Math.abs(d.x);
+    const oy = _halfA.y + _halfB.y - Math.abs(d.y);
+    const oz = _halfA.z + _halfB.z - Math.abs(d.z);
     if (ox <= 0 || oy <= 0 || oz <= 0) return 0;
     if (ox <= oy && ox <= oz) { out.set(Math.sign(d.x), 0, 0); return ox; }
     if (oy <= ox && oy <= oz) { out.set(0, Math.sign(d.y), 0); return oy; }
@@ -62,8 +64,9 @@ export class Physics {
   private colliders: Collider[]   = [];
   private rigidBodies: RigidBody[] = [];
   private groundMeshes: THREE.Object3D[] = [];
-  private active = new Set<string>();
+  private active = new Set<number>();
   private nextId = 0;
+  private colliderById = new Map<number, Collider>();
 
   // --- Registration ---
 
@@ -128,15 +131,15 @@ export class Physics {
   // --- Triggers ---
 
   private stepTriggers(): void {
-    const { colliders } = this;
-    const colliderById = new Map<number, Collider>();
+    const { colliders, colliderById } = this;
+    colliderById.clear();
 
     for (const c of colliders) {
       colliderById.set((c as any)._id as number, c);
       if (c.enabled) c.object.getWorldPosition(c.worldPos);
     }
 
-    const stillActive = new Set<string>();
+    const stillActive = new Set<number>();
 
     for (let i = 0; i < colliders.length; i++) {
       const a = colliders[i];
@@ -164,7 +167,8 @@ export class Physics {
 
     for (const key of this.active) {
       if (!stillActive.has(key)) {
-        const [ia, ib] = key.split(":").map(Number);
+        const ia = key >>> 16;
+        const ib = key & 0xFFFF;
         const a = colliderById.get(ia);
         const b = colliderById.get(ib);
         a?.onTriggerExit?.({ self: a, other: b! });
@@ -194,9 +198,9 @@ export class Physics {
     b.object.getWorldPosition(b.worldPos);
   }
 
-  private pairKey(a: Collider, b: Collider): string {
+  private pairKey(a: Collider, b: Collider): number {
     const ia = (a as any)._id as number;
     const ib = (b as any)._id as number;
-    return ia < ib ? `${ia}:${ib}` : `${ib}:${ia}`;
+    return ia < ib ? (ia << 16) | ib : (ib << 16) | ia;
   }
 }

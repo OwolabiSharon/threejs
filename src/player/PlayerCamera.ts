@@ -14,7 +14,7 @@ export class PlayerCamera {
   private mouseSensitivity = 0.002;
   private minPitch = -Math.PI / 120;
   private maxPitch = Math.PI / 120;
-  private lockRange = 20;
+  private lockRangeSq = 20 * 20;
   private lockBreakDelay = 1.0;
   private lockInvalidTimer = 0;
   private up = new THREE.Vector3(0, 1, 0);
@@ -38,10 +38,15 @@ export class PlayerCamera {
   private freeLookRecoverEpsilonSq = 1;
   private unlockDefaultPitch = -Math.PI / 8;
 
+  // Reusable objects to avoid per-call allocations
+  private frustum = new THREE.Frustum();
+  private projScreenMatrix = new THREE.Matrix4();
+  private ndcVec = new THREE.Vector3();
+
   constructor(
     scene: THREE.Scene,
     camera: THREE.Camera,
-    offset = new THREE.Vector3(0, 6, 6)
+    offset = new THREE.Vector3(0, 4, 4)
   ) {
     this.scene = scene;
     this.camera = camera;
@@ -113,13 +118,11 @@ export class PlayerCamera {
     this.camera.getWorldPosition(this.cameraPos);
     followObject.getWorldPosition(this.playerPos);
 
-    const frustum = new THREE.Frustum();
-    const projScreenMatrix = new THREE.Matrix4();
-    projScreenMatrix.multiplyMatrices(
+    this.projScreenMatrix.multiplyMatrices(
       (this.camera as THREE.PerspectiveCamera).projectionMatrix,
       this.camera.matrixWorldInverse
     );
-    frustum.setFromProjectionMatrix(projScreenMatrix);
+    this.frustum.setFromProjectionMatrix(this.projScreenMatrix);
 
     let bestTarget: THREE.Object3D | null = null;
     let bestScore = Infinity;
@@ -129,10 +132,10 @@ export class PlayerCamera {
 
       // Range check
       const distSq = this.playerPos.distanceToSquared(this.targetPos);
-      if (distSq > this.lockRange * this.lockRange) continue;
+      if (distSq > this.lockRangeSq) continue;
 
       // Must be in camera frustum
-      if (!frustum.containsPoint(this.targetPos)) continue;
+      if (!this.frustum.containsPoint(this.targetPos)) continue;
 
       // Line of sight — aim at chest height, not root origin
       const chestOffset = 1.6;
@@ -154,8 +157,8 @@ export class PlayerCamera {
       }
       if (blocked) continue;
 
-      const ndc = this.targetPos.clone().project(this.camera as THREE.PerspectiveCamera);
-      const screenDist = Math.sqrt(ndc.x * ndc.x + ndc.y * ndc.y);
+      this.ndcVec.copy(this.targetPos).project(this.camera as THREE.PerspectiveCamera);
+      const screenDist = Math.sqrt(this.ndcVec.x * this.ndcVec.x + this.ndcVec.y * this.ndcVec.y);
       if (screenDist < bestScore) {
         bestScore = screenDist;
         bestTarget = candidate;
@@ -170,13 +173,11 @@ export class PlayerCamera {
     this.camera.getWorldPosition(this.cameraPos);
     followObject.getWorldPosition(this.playerPos);
 
-    const frustum = new THREE.Frustum();
-    const projScreenMatrix = new THREE.Matrix4();
-    projScreenMatrix.multiplyMatrices(
+    this.projScreenMatrix.multiplyMatrices(
       (this.camera as THREE.PerspectiveCamera).projectionMatrix,
       this.camera.matrixWorldInverse
     );
-    frustum.setFromProjectionMatrix(projScreenMatrix);
+    this.frustum.setFromProjectionMatrix(this.projScreenMatrix);
 
     let bestTarget: THREE.Object3D | null = null;
     let bestDistSq = Infinity;
@@ -185,11 +186,11 @@ export class PlayerCamera {
       candidate.getWorldPosition(this.targetPos);
 
       // Must be in camera frustum
-      if (!frustum.containsPoint(this.targetPos)) continue;
+      if (!this.frustum.containsPoint(this.targetPos)) continue;
 
       // Range check
       const distSq = this.playerPos.distanceToSquared(this.targetPos);
-      if (distSq > this.lockRange * this.lockRange) continue;
+      if (distSq > this.lockRangeSq) continue;
 
       // Line of sight — aim at chest height, not root origin
       const chestOffset = 1.6;
@@ -308,7 +309,7 @@ export class PlayerCamera {
   private isInRange(followObject: THREE.Object3D, lockedTarget: THREE.Object3D): boolean {
     followObject.getWorldPosition(this.playerPos);
     lockedTarget.getWorldPosition(this.targetPos);
-    return this.playerPos.distanceToSquared(this.targetPos) <= this.lockRange * this.lockRange;
+    return this.playerPos.distanceToSquared(this.targetPos) <= this.lockRangeSq;
   }
 
   private hasLineOfSight(followObject: THREE.Object3D, lockedTarget: THREE.Object3D, lockCandidates: THREE.Object3D[]): boolean {

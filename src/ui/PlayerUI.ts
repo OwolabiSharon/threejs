@@ -12,6 +12,7 @@ interface PlayerHudElements {
 export class PlayerUI {
   private elements: PlayerHudElements;
   private lastHealthPercent = -1;
+  private lastStaminaPercent = -1;
 
   constructor() {
     this.elements = this.createHud();
@@ -35,6 +36,8 @@ export class PlayerUI {
     const safeMax = Math.max(1, max);
     const ratio = Math.max(0, Math.min(1, current / safeMax));
     const percent = Math.round(ratio * 100);
+    if (percent === this.lastStaminaPercent) return;
+    this.lastStaminaPercent = percent;
     this.elements.greenFill.style.width = `${percent}%`;
   }
 

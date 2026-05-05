@@ -11,16 +11,16 @@ import { PlayerUI } from "./ui/PlayerUI";
 import { EnemyManager } from "./enemy/EnemyManager";
 import { LoadingScreen } from "./ui/LoadingScreen";
 
-// Audio setup
-// const menuMusic = new Audio("/assets/audios/Tower%20Attack%20Menu%20(1).wav");
-// menuMusic.loop = true;
-// menuMusic.volume = 0.5;
 
-// const gameMusic = new Audio("/assets/audios/Tower%20Attack%20(1).wav");
-// gameMusic.loop = true;
-// gameMusic.volume = 0.5;
+const menuMusic = new Audio("/assets/audios/Tower%20Attack%20Menu%20(1).wav");
+menuMusic.loop = true;
+menuMusic.volume = 0.5;
 
-// // Try to play menu music on first interaction
+const gameMusic = new Audio("/assets/audios/Tower%20Attack%20(1).wav");
+gameMusic.loop = true;
+gameMusic.volume = 0.5;
+
+// Try to play menu music on first interaction
 // window.addEventListener("click", () => {
 //   if (menuMusic.paused && !gameStarted) {
 //     menuMusic.play().catch(e => console.log("Audio play blocked", e));
@@ -39,7 +39,7 @@ export { physics };
 
 // 2. Setup World and Player
 const world = new World(scene);
-world.init();
+await world.init();
 
 const player = new Player(scene, camera);
 const playerUI = new PlayerUI();
@@ -61,9 +61,11 @@ if (ground) physics.addGroundMesh(ground);
 physics.addRigidBody(player.rigidBody);
 
 const enemyManager = new EnemyManager(scene, player);
-enemyManager.spawnEnemy(new THREE.Vector3(0, 0, -30));
-enemyManager.spawnEnemy(new THREE.Vector3(20, 0, -30));
-enemyManager.spawnEnemy(new THREE.Vector3(-20, 0, -30));
+
+// Setup enemy spawning callback
+world.setEnemySpawnCallback((position) => {
+  enemyManager.spawnEnemy(position);
+});
 
 loadingScreen.onPlay(() => {
   // Start fading out menu music
@@ -83,7 +85,7 @@ loadingScreen.onPlay(() => {
     clock.start();
 
     // Start game music
-    // gameMusic.play().catch(e => console.log("Game audio play blocked", e));
+    gameMusic.play().catch(e => console.log("Game audio play blocked", e));
 
     // Instant reveal for the canvas
     renderer.domElement.style.opacity = "1";
@@ -96,7 +98,8 @@ function animate(): void {
   if (!gameStarted) return;
 
   const delta = Math.min(clock.getDelta(), 0.05);
-  world.update();
+  world.setPlayerPosition(player.root.position);
+  world.update(delta);
   player.update(input, delta);
   playerUI.updateHealth(player.hp, player.maxHp);
   playerUI.updateStamina(player.stamina, player.maxStamina);

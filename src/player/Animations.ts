@@ -91,7 +91,6 @@ export class Animations {
 
   playOneShot(key: string): void {
     const action = this.actions[key];
-    console.log(action)
     if (!action) return;
     
     const shouldInterrupt = INTERRUPT_KEYS.has(key);

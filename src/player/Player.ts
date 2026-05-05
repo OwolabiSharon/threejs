@@ -72,6 +72,16 @@ export class Player {
   private movementVelocity = new THREE.Vector3();
   private tempDirection = new THREE.Vector3();
 
+  // Reusable scratch vectors for lock-on direction finding
+  private _lockPlayerPos = new THREE.Vector3();
+  private _lockTargetPos = new THREE.Vector3();
+  private _lockCandidatePos = new THREE.Vector3();
+  private _lockCameraPos = new THREE.Vector3();
+  private _lockToRef = new THREE.Vector3();
+  private _lockCamRight = new THREE.Vector3();
+  private _lockToCandidate = new THREE.Vector3();
+  private static readonly _UP = new THREE.Vector3(0, 1, 0);
+
   constructor(scene: THREE.Scene, camera: THREE.Camera) {
     this.scene = scene;
 
@@ -117,18 +127,13 @@ export class Player {
   findNearestLockOnToDirection(direction: "left" | "right"): THREE.Object3D | null {
     if (!this.lockedTarget) return null;
 
-    const playerPos = new THREE.Vector3();
-    const targetPos = new THREE.Vector3();
-    const candidatePos = new THREE.Vector3();
-    const cameraPos = new THREE.Vector3();
+    this.root.getWorldPosition(this._lockPlayerPos);
+    this.lockedTarget.getWorldPosition(this._lockTargetPos);
+    this.playerCamera.getCamera().getWorldPosition(this._lockCameraPos);
 
-    this.root.getWorldPosition(playerPos);
-    this.lockedTarget.getWorldPosition(targetPos);
-    this.playerCamera.getCamera().getWorldPosition(cameraPos);
-
-    const referencePos = targetPos;
-    const toReference = new THREE.Vector3().subVectors(referencePos, cameraPos).normalize();
-    const cameraRight = new THREE.Vector3().crossVectors(toReference, new THREE.Vector3(0, 1, 0)).normalize();
+    const referencePos = this._lockTargetPos;
+    this._lockToRef.subVectors(referencePos, this._lockCameraPos).normalize();
+    this._lockCamRight.crossVectors(this._lockToRef, Player._UP).normalize();
 
     let bestCandidate: THREE.Object3D | null = null;
     let bestScore = -Infinity;
@@ -136,13 +141,13 @@ export class Player {
     for (const candidate of this.lockCandidates) {
       if (candidate === this.lockedTarget) continue;
 
-      candidate.getWorldPosition(candidatePos);
-      const toCandidate = new THREE.Vector3().subVectors(candidatePos, referencePos);
-      const lateralDot = toCandidate.dot(cameraRight);
+      candidate.getWorldPosition(this._lockCandidatePos);
+      this._lockToCandidate.subVectors(this._lockCandidatePos, referencePos);
+      const lateralDot = this._lockToCandidate.dot(this._lockCamRight);
 
       if ((direction === "right" && lateralDot <= 0) || (direction === "left" && lateralDot >= 0)) continue;
 
-      const distance = candidatePos.distanceTo(referencePos);
+      const distance = this._lockCandidatePos.distanceTo(referencePos);
       const score = Math.abs(lateralDot) / (distance + 1);
 
       if (score > bestScore) {
@@ -182,10 +187,10 @@ export class Player {
     bodyHelper.position.set(0, 1.8, 0);
     this.root.add(bodyHelper);
     this.bodyCollider = new Collider(bodyHelper, { type: "box", size: new THREE.Vector3(1.2, 2.8, 1.2) }, "player", false, true, this.root);
-    bodyHelper.add(new THREE.Mesh(
-      new THREE.BoxGeometry(1.2, 2.8, 1.2),
-      new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true })
-    ));
+    // bodyHelper.add(new THREE.Mesh(
+    //   new THREE.BoxGeometry(1.2, 2.8, 1.2),
+    //   new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true })
+    // ));
   }
 
   registerHit(source: THREE.Object3D, attack: AttackData): void {

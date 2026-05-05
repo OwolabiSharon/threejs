@@ -22,7 +22,7 @@ export class PlayerMovement {
   private tapMoveDir = new THREE.Vector3();
   private tapVelocity = new THREE.Vector3();
 
-  constructor(moveSpeed = 0.65, turnSpeed = 10, lockRotationLerpSpeed = 10) {
+  constructor(moveSpeed = 0.8, turnSpeed = 10, lockRotationLerpSpeed = 10) {
     this.moveSpeed = moveSpeed;
     this.turnSpeed = turnSpeed;
     this.lockRotationLerpSpeed = lockRotationLerpSpeed;
